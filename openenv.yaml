@@ -1,0 +1,326 @@
+name: supply-chain-disruption-env
+version: "1.0.0"
+description: >
+  OpenEnv-compliant reinforcement learning environment for supply chain disruption
+  management. An AI agent learns to assess and resolve crises — taking natural-language
+  actions (rerouting suppliers, expediting shipments, reallocating stock) across a
+  multi-node supply chain with 5 global suppliers, 3 regional warehouses, 3 factories,
+  and 4 customer orders with escalating late penalties.
+
+tags:
+  - supply-chain
+  - logistics
+  - disruption-management
+  - multi-step
+  - natural-language-actions
+  - reinforcement-learning
+  - operations-research
+
+tasks:
+  - id: assess_disruption
+    name: "Assess Disruption"
+    difficulty: easy
+    max_steps: 1
+    reward_range: [0.0, 1.0]
+    description: >
+      Agent is shown a disruption event and must output a single structured assessment
+      line identifying: affected components, severity level, minimum days of stock
+      remaining, and factories at risk.
+    grader:
+      affected_components:
+        weight: 0.30
+        method: F1 score vs ground truth component set
+      severity:
+        weight: 0.25
+        method: "exact=1.0; adjacent level=0.6; two levels off=0.2; else=0.0"
+      days_of_stock:
+        weight: 0.25
+        method: "exact=1.0; ±1=0.7; ±3=0.3; else=0.0"
+      factories_at_risk:
+        weight: 0.20
+        method: recall (correct / total expected factories)
+    example_action: >
+      assess situation: affected_components=[chip,sensor] severity=critical
+      days_of_stock=2 factories_at_risk=[FAC_ALPHA,FAC_BETA,FAC_GAMMA]
+
+  - id: resolve_disruption
+    name: "Resolve Disruption"
+    difficulty: medium
+    max_steps: 5
+    budget: 200000
+    reward_range: [0.0, 1.0]
+    description: >
+      Agent takes up to 5 natural-language recovery actions within a $200,000 budget
+      to restore supply chain integrity after an active disruption event
+      (Factory Fire at SUP_B + Logistics Collapse affecting SUP_D).
+    per_step_reward: "action quality signal (0.05–0.20 per useful action)"
+    grader:
+      budget_compliance:
+        weight: 0.20
+        method: 1.0 if within budget, else proportional penalty
+      priority_orders_protected:
+        weight: 0.35
+        method: estimated CRITICAL+HIGH order coverage given post-action supply
+      action_diversity:
+        weight: 0.25
+        method: unique useful action types used / 5
+      efficiency:
+        weight: 0.20
+        method: balanced spend score (too little or over budget = lower)
+
+  - id: cascade_management
+    name: "Cascade Management"
+    difficulty: hard
+    max_steps: 10
+    budget: 200000
+    reward_range: [0.0, 1.0]
+    description: >
+      10-day rolling crisis. Episode starts with Dual Disruption (SUP_A + SUP_D).
+      A new Factory Fire disruption is injected at step 4 (SUP_B halted 12 days).
+      Each step the agent acts, then one day of factory production and order
+      fulfilment is simulated. Late penalties accrue every day past each order deadline.
+    per_step_reward: "0.3 × action_quality + 0.7 × (1 − daily_penalties / 28000)"
+    special_events:
+      - step: 4
+        event_id: factory_fire_sup_b
+        description: "Factory Fire at BetaCraft Germany — motors + sensors halted 12 days"
+    grader:
+      order_fulfillment_rate:
+        weight: 0.35
+        method: total units fulfilled / total units required across all orders
+      on_time_delivery_rate:
+        weight: 0.25
+        method: orders fulfilled by their due_day / total orders
+      financial_score:
+        weight: 0.25
+        method: 1 − actual_penalties / max_possible_penalties
+      budget_efficiency:
+        weight: 0.15
+        method: reward active spending within the $200k budget cap
+
+world:
+  suppliers:
+    - id: SUP_A
+      name: AlphaSource Taiwan
+      components: [chip, sensor]
+      reliability: 0.92
+      lead_time_days: 7
+      cost_per_unit: 50.0
+    - id: SUP_B
+      name: BetaCraft Germany
+      components: [motor, sensor]
+      reliability: 0.88
+      lead_time_days: 5
+      cost_per_unit: 80.0
+    - id: SUP_C
+      name: CasingCo Vietnam
+      components: [casing]
+      reliability: 0.95
+      lead_time_days: 4
+      cost_per_unit: 30.0
+    - id: SUP_D
+      name: DeltaPower Mexico
+      components: [battery, motor]
+      reliability: 0.85
+      lead_time_days: 3
+      cost_per_unit: 60.0
+    - id: SUP_E
+      name: EchoTech South Korea
+      components: [chip, battery]
+      reliability: 0.90
+      lead_time_days: 6
+      cost_per_unit: 55.0
+
+  warehouses:
+    - id: WH_NORTH
+      location: Chicago
+      initial_stock: {chip: 400, sensor: 350, casing: 600, motor: 200, battery: 300}
+    - id: WH_SOUTH
+      location: Dallas
+      initial_stock: {chip: 250, sensor: 500, casing: 300, motor: 400, battery: 150}
+    - id: WH_WEST
+      location: Los Angeles
+      initial_stock: {chip: 180, sensor: 220, casing: 450, motor: 300, battery: 500}
+
+  factories:
+    - id: FAC_ALPHA
+      location: Detroit
+      served_by: WH_NORTH
+      production_rate: 80
+      recipe: {chip: 2, sensor: 1, casing: 1, motor: 1, battery: 1}
+    - id: FAC_BETA
+      location: Houston
+      served_by: WH_SOUTH
+      production_rate: 60
+      recipe: {chip: 1, sensor: 2, motor: 2, battery: 1, casing: 1}
+    - id: FAC_GAMMA
+      location: Seattle
+      served_by: WH_WEST
+      production_rate: 50
+      recipe: {chip: 1, sensor: 1, casing: 2, motor: 1, battery: 2}
+
+  orders:
+    - id: ORD_001
+      customer: TechRetail Inc.
+      units: 400
+      due_day: 6
+      late_penalty_per_day: 12000
+      priority: CRITICAL
+    - id: ORD_002
+      customer: AutoParts Co.
+      units: 300
+      due_day: 9
+      late_penalty_per_day: 8000
+      priority: HIGH
+    - id: ORD_003
+      customer: MedDevice Ltd.
+      units: 200
+      due_day: 12
+      late_penalty_per_day: 5000
+      priority: MEDIUM
+    - id: ORD_004
+      customer: ConsumerGoods Corp.
+      units: 150
+      due_day: 15
+      late_penalty_per_day: 3000
+      priority: LOW
+
+disruptions:
+  - id: port_strike_asia
+    severity: critical
+    affected_suppliers: [SUP_A, SUP_E]
+    delay_days: 8
+    affected_components: [chip, sensor, battery]
+  - id: factory_fire_sup_b
+    severity: high
+    affected_suppliers: [SUP_B]
+    delay_days: 12
+    affected_components: [motor, sensor]
+  - id: demand_spike
+    severity: medium
+    affected_suppliers: []
+    order_impact: {ORD_001: 2.0}
+  - id: logistics_collapse_americas
+    severity: high
+    affected_suppliers: [SUP_D]
+    delay_days: 5
+    affected_components: [battery, motor]
+  - id: quality_recall_sup_e
+    severity: critical
+    affected_suppliers: [SUP_E]
+    stock_impact:
+      WH_NORTH: {chip: -150}
+      WH_WEST: {chip: -100}
+    affected_components: [chip]
+  - id: dual_disruption
+    severity: critical
+    affected_suppliers: [SUP_A, SUP_D]
+    delay_days: 7
+    affected_components: [chip, sensor, battery, motor]
+
+observation_space:
+  type: structured_json
+  schema: SCObservation
+  fields:
+    task: string
+    day: integer
+    max_days: integer
+    budget_remaining: float
+    total_penalties_so_far: float
+    active_disruptions: "list[DisruptionInfo]"
+    suppliers: "list[SupplierStatus]"
+    warehouses: "list[WarehouseStatus]"
+    factories: "list[FactoryStatus]"
+    orders: "list[OrderStatus]"
+    last_action_result: string
+    score_so_far: float
+    done: boolean
+    available_actions: "list[string]"
+
+action_space:
+  type: natural_language
+  parser: keyword_matching
+  action_types:
+    reroute_supplier:
+      keywords: [reroute, "switch supplier", "alternate supplier"]
+      template: "reroute supplier from <SUP_X> to <SUP_Y> for <N> <component>"
+      cost: "N × dest_cost × 1.3 (emergency premium)"
+    expedite_shipping:
+      keywords: [expedite, airfreight, "urgent ship", rush]
+      template: "expedite <N> <component> from <WH_X> to <FAC_Y>"
+      cost: "N × $15 (airfreight flat rate)"
+    reallocate_stock:
+      keywords: [reallocate, transfer, "move stock", redistribute]
+      template: "reallocate <N> <component> from <WH_X> to <WH_Y>"
+      cost: "N × $5 (ground transfer)"
+    pause_factory:
+      keywords: [pause, halt, "stop factory", "idle factory"]
+      template: "pause <FAC_X> for <N> days"
+      cost: "N × $5,000 (idle cost)"
+    activate_emergency_supplier:
+      keywords: ["emergency supplier", "spot market", "emergency order"]
+      template: "activate emergency supplier for <N> <component>"
+      cost: "N × $120 (spot market premium)"
+    notify_client:
+      keywords: [notify, "inform client", "warn client", "alert client"]
+      template: "notify client <ORD_X> of <N> day delay"
+      cost: "$0"
+    assess_situation:
+      keywords: [assess, status, report, situation, overview]
+      template: "assess situation"
+      cost: "$0"
+      reward_bonus: 0.05
+
+reward:
+  range: [0.0, 1.0]
+  clipping: always
+  budget_violation: returns 0.0 reward, state unchanged
+  per_step: true
+  final: true
+  notes: >
+    Task 1: single final reward from 4-field grader.
+    Task 2: per-step action quality (0–0.20) + final composite grader on last step.
+    Task 3: per-step = 0.3×action_quality + 0.7×(1−daily_penalties/28000); final = composite grader.
+
+endpoints:
+  reset:
+    method: POST
+    path: /reset
+    body: "{task: string, seed: int}"
+    response: "{session_id, observation, done}"
+  step:
+    method: POST
+    path: /step
+    body: "{session_id: string, command: string}"
+    response: "{session_id, observation, reward, done, info}"
+  state:
+    method: GET
+    path: /state
+    query: "?session_id=<uuid>"
+    response: SCState
+  health:
+    method: GET
+    path: /health
+    response: "{status: ok}"
+
+baseline_scores:
+  assess_disruption:
+    random_agent: 0.10
+    keyword_heuristic: 0.45
+    baseline_llm: 0.65
+    target: 0.80
+  resolve_disruption:
+    random_agent: 0.05
+    keyword_heuristic: 0.30
+    baseline_llm: 0.48
+    target: 0.70
+  cascade_management:
+    random_agent: 0.03
+    keyword_heuristic: 0.20
+    baseline_llm: 0.38
+    target: 0.60
+
+docker:
+  port: 7860
+  env:
+    ENABLE_WEB_INTERFACE: "true"
