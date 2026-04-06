@@ -1,6 +1,6 @@
 ﻿---
 title: Supply Chain Disruption Env
-emoji: chain
+emoji: 🚚
 colorFrom: blue
 colorTo: green
 sdk: docker
