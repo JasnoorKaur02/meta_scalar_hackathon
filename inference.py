@@ -25,12 +25,13 @@ from openai import OpenAI
 
 # ── Configuration ──────────────────────────────────────────────────────────────
 
+HF_TOKEN: str = os.getenv("HF_TOKEN")
 API_BASE_URL: str = os.getenv("API_BASE_URL", "https://router.huggingface.co/v1")
 MODEL_NAME: str = os.getenv("MODEL_NAME", "Qwen/Qwen2.5-72B-Instruct")
-API_KEY: str = os.getenv("HF_TOKEN") or os.getenv("API_KEY", "")
+_client = OpenAI(base_url=API_BASE_URL, api_key=HF_TOKEN)
 ENV_BASE_URL: str = os.getenv("ENV_BASE_URL", "http://localhost:7860")
 
-_client = OpenAI(base_url=API_BASE_URL, api_key=API_KEY or "no-key")
+
 
 ENV_NAME = "supply-chain-disruption-env"
 
