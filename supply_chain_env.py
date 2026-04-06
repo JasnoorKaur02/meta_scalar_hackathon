@@ -1188,7 +1188,7 @@ class SupplyChainEnv:
 
         if done:
             final_reward, grade_info = _grade_task3(w)
-            final_reward = float(max(0.0, min(1.0, final_reward)))
+            final_reward = float(max(0.0001, min(0.999, final_reward)))
             w["score_so_far"] = final_reward
             w["cumulative_reward"] += final_reward
             w["done"] = True
