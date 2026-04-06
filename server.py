@@ -119,7 +119,9 @@ def info():
 
 
 @app.post("/reset")
-def reset(req: ResetRequest):
+def reset(req: ResetRequest = None):
+    if req is None:
+        req = ResetRequest()
     """
     Start a new episode.
 
@@ -173,3 +175,5 @@ def state(session_id: str):
     """
     env = _get_session(session_id)
     return env.state().model_dump()
+
+
