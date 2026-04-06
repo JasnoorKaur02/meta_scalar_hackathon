@@ -1,15 +1,15 @@
-"""
-supply_chain_env.py — OpenEnv-compliant SupplyChainEnv.
+﻿"""
+supply_chain_env.py â€” OpenEnv-compliant SupplyChainEnv.
 
 Implements:
-  reset(task, seed) → SCObservation
-  step(SCAction)    → (SCObservation, float, bool, dict)
-  state()           → SCState
+  reset(task, seed) â†’ SCObservation
+  step(SCAction)    â†’ (SCObservation, float, bool, dict)
+  state()           â†’ SCState
 
 Three tasks:
-  assess_disruption   — 1 step,  grade structured NL assessment
-  resolve_disruption  — 5 steps, $200k budget, recovery planning
-  cascade_management  — 10 steps, cascading disruptions, daily simulation
+  assess_disruption   â€” 1 step,  grade structured NL assessment
+  resolve_disruption  â€” 5 steps, $200k budget, recovery planning
+  cascade_management  â€” 10 steps, cascading disruptions, daily simulation
 """
 
 import copy
@@ -24,9 +24,9 @@ from world import (
 )
 from parser import parse_action, parse_assessment
 
-# ════════════════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 #  Pydantic Models (OpenEnv spec)
-# ════════════════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 class SupplierStatus(BaseModel):
     id: str
@@ -115,9 +115,9 @@ class SCState(BaseModel):
     cumulative_reward: float
 
 
-# ════════════════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 #  World State Initialisation & Mutation
-# ════════════════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 _TASK_MAX_STEPS = {
     "assess_disruption": 1,
@@ -178,7 +178,7 @@ def _init_world(task: str) -> Dict:
         "last_action_result": "Episode started.",
         "action_types_used": set(),  # tracks diversity
         "pending_shipments": [],     # {arrives_day, warehouse, component, units}
-        "active_disruptions": {},    # disruption_id → disruption dict + days_remaining
+        "active_disruptions": {},    # disruption_id â†’ disruption dict + days_remaining
         "suppliers": suppliers,
         "warehouses": warehouses,
         "factories": factories,
@@ -236,7 +236,7 @@ def _simulate_day(world: Dict) -> float:
     world["day"] += 1
     day = world["day"]
 
-    # ── 1. Pending shipments ─────────────────────────────────────────────────
+    # â”€â”€ 1. Pending shipments â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     for shipment in world["pending_shipments"][:]:
         if shipment["arrives_day"] <= day:
             wh = shipment["warehouse"]
@@ -247,7 +247,7 @@ def _simulate_day(world: Dict) -> float:
                 )
             world["pending_shipments"].remove(shipment)
 
-    # ── 2. Accrue late penalties (start-of-production snapshot) ─────────────
+    # â”€â”€ 2. Accrue late penalties (start-of-production snapshot) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     daily_penalty = 0.0
     for order in world["orders"].values():
         if order["status"] != "fulfilled" and day > order["due_day"]:
@@ -257,7 +257,7 @@ def _simulate_day(world: Dict) -> float:
             world["total_penalties"] += p
             daily_penalty += p
 
-    # ── 3. Factory production ────────────────────────────────────────────────
+    # â”€â”€ 3. Factory production â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     total_produced = 0
     for fac in world["factories"].values():
         fac["units_produced_today"] = 0
@@ -288,7 +288,7 @@ def _simulate_day(world: Dict) -> float:
         else:
             fac["status"] = "starved"
 
-    # ── 4. Allocate production to orders (CRITICAL first) ───────────────────
+    # â”€â”€ 4. Allocate production to orders (CRITICAL first) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     available = total_produced
     for priority in PRIORITY_ORDER:
         for order in world["orders"].values():
@@ -304,7 +304,7 @@ def _simulate_day(world: Dict) -> float:
         if available <= 0:
             break
 
-    # ── 5. Tick down active disruptions ─────────────────────────────────────
+    # â”€â”€ 5. Tick down active disruptions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     for dis_id in list(world["active_disruptions"].keys()):
         dis = world["active_disruptions"][dis_id]
         dis["days_remaining"] -= 1
@@ -319,9 +319,9 @@ def _simulate_day(world: Dict) -> float:
     return daily_penalty
 
 
-# ════════════════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 #  Action Execution
-# ════════════════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 def _action_cost(world: Dict, parsed: Dict) -> float:
     """Calculate cost of a parsed action without applying it."""
@@ -362,7 +362,7 @@ def _execute_action(world: Dict, parsed: Dict) -> Tuple[float, str, bool]:
     cost = _action_cost(world, parsed)
     if cost > world["budget_remaining"]:
         return 0.0, (
-            f"Insufficient budget — need ${cost:,.0f}, "
+            f"Insufficient budget â€” need ${cost:,.0f}, "
             f"have ${world['budget_remaining']:,.0f}."
         ), False
 
@@ -422,7 +422,7 @@ def _do_reroute(world: Dict, p: Dict, cost: float) -> Tuple[float, str, bool]:
         "units": units,
     })
     return 0.15, (
-        f"Rerouted {units}× {comp} from {from_sup} → {to_sup}. "
+        f"Rerouted {units}Ã— {comp} from {from_sup} â†’ {to_sup}. "
         f"Shipment of {units} arrives at {target_wh} on day {arrives}. "
         f"Cost: ${cost:,.0f}."
     ), True
@@ -443,7 +443,7 @@ def _do_expedite(world: Dict, p: Dict, cost: float) -> Tuple[float, str, bool]:
 
     to_wh = world["factories"][to_fac]["served_by"]
     if from_wh == to_wh:
-        return 0.0, f"{from_wh} already serves {to_fac} — expedite within same warehouse is a no-op.", False
+        return 0.0, f"{from_wh} already serves {to_fac} â€” expedite within same warehouse is a no-op.", False
 
     available = world["warehouses"][from_wh]["stock"].get(comp, 0)
     actual = min(units, available)
@@ -457,7 +457,7 @@ def _do_expedite(world: Dict, p: Dict, cost: float) -> Tuple[float, str, bool]:
         world["warehouses"][to_wh]["stock"].get(comp, 0) + actual
     )
     return 0.20, (
-        f"Expedited {actual}× {comp} from {from_wh} → {to_fac} ({to_wh}). "
+        f"Expedited {actual}Ã— {comp} from {from_wh} â†’ {to_fac} ({to_wh}). "
         f"Cost: ${actual_cost:,.0f}."
     ), True
 
@@ -489,7 +489,7 @@ def _do_reallocate(world: Dict, p: Dict, cost: float) -> Tuple[float, str, bool]
         world["warehouses"][to_wh]["stock"].get(comp, 0) + actual
     )
     return 0.10, (
-        f"Reallocated {actual}× {comp} from {from_wh} → {to_wh}. "
+        f"Reallocated {actual}Ã— {comp} from {from_wh} â†’ {to_wh}. "
         f"Cost: ${actual_cost:,.0f}."
     ), True
 
@@ -527,7 +527,7 @@ def _do_emergency(world: Dict, p: Dict, cost: float) -> Tuple[float, str, bool]:
         world["warehouses"][target]["stock"].get(comp, 0) + units
     )
     return 0.20, (
-        f"Emergency order fulfilled: {units}× {comp} added to {target}. "
+        f"Emergency order fulfilled: {units}Ã— {comp} added to {target}. "
         f"Cost: ${cost:,.0f} (spot-market premium)."
     ), True
 
@@ -548,9 +548,9 @@ def _do_notify(world: Dict, p: Dict, _cost: float) -> Tuple[float, str, bool]:
     ), True
 
 
-# ════════════════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 #  Observation / State Builders
-# ════════════════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 _AVAILABLE_ACTIONS = [
     "reroute supplier from <SUP_X> to <SUP_Y> for <N> <component>",
@@ -674,13 +674,13 @@ def _build_state(world: Dict) -> SCState:
     )
 
 
-# ════════════════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 #  Situation Report (assess_situation action)
-# ════════════════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 def _situation_report(world: Dict) -> str:
     lines = [
-        f"=== Situation Report — Day {world['day']} ===",
+        f"=== Situation Report â€” Day {world['day']} ===",
         f"Budget remaining : ${world['budget_remaining']:>10,.0f}",
         f"Total penalties  : ${world['total_penalties']:>10,.0f}",
         "",
@@ -689,9 +689,9 @@ def _situation_report(world: Dict) -> str:
     if world["active_disruptions"]:
         for d in world["active_disruptions"].values():
             lines.append(
-                f"  [{d['severity'].upper()}] {d['name']} — "
-                f"{d['days_remaining']}d remaining — "
-                f"affects {d['affected_suppliers']} — "
+                f"  [{d['severity'].upper()}] {d['name']} â€” "
+                f"{d['days_remaining']}d remaining â€” "
+                f"affects {d['affected_suppliers']} â€” "
                 f"components: {d.get('affected_components', [])}"
             )
     else:
@@ -716,7 +716,7 @@ def _situation_report(world: Dict) -> str:
         lines.append(
             f"  {o['id']} [{o['priority']:8s}] "
             f"{o['units_fulfilled']:4d}/{o['units_required']:4d} ({pct:3d}%) "
-            f"due day {o['due_day']} — {o['status']}"
+            f"due day {o['due_day']} â€” {o['status']}"
         )
 
     pending = world["pending_shipments"]
@@ -724,16 +724,16 @@ def _situation_report(world: Dict) -> str:
         lines += ["", "Pending shipments:"]
         for s in pending:
             lines.append(
-                f"  {s['units']}× {s['component']} → {s['warehouse']} "
+                f"  {s['units']}Ã— {s['component']} â†’ {s['warehouse']} "
                 f"arrives day {s['arrives_day']}"
             )
 
     return "\n".join(lines)
 
 
-# ════════════════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 #  Task 1 Grader
-# ════════════════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 def _compute_days_of_stock(disruption: Dict, world: Dict) -> int:
     """
@@ -781,8 +781,8 @@ def _grade_task1(response: str, disruption: Dict, world: Dict) -> Tuple[float, D
 
     Scoring:
       affected_components  30%  F1 vs ground truth
-      severity             25%  exact=1.0, ±1 level=0.6, ±2=0.2, else=0
-      days_of_stock        25%  exact=1.0, ±1=0.7, ±3=0.3, else=0
+      severity             25%  exact=1.0, Â±1 level=0.6, Â±2=0.2, else=0
+      days_of_stock        25%  exact=1.0, Â±1=0.7, Â±3=0.3, else=0
       factories_at_risk    20%  recall (correct / total expected)
     """
     parsed = parse_assessment(response)
@@ -793,7 +793,7 @@ def _grade_task1(response: str, disruption: Dict, world: Dict) -> Tuple[float, D
     true_days = _compute_days_of_stock(disruption, world)
     true_facs = set(_compute_factories_at_risk(disruption, world))
 
-    # ── affected_components (F1) ─────────────────────────────────────────────
+    # â”€â”€ affected_components (F1) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     agent_comps = set(parsed["affected_components"])
     if true_comps or agent_comps:
         tp = len(agent_comps & true_comps)
@@ -803,7 +803,7 @@ def _grade_task1(response: str, disruption: Dict, world: Dict) -> Tuple[float, D
     else:
         comp_score = 1.0
 
-    # ── severity ─────────────────────────────────────────────────────────────
+    # â”€â”€ severity â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     sev_levels = ["low", "medium", "high", "critical"]
     agent_sev = (parsed["severity"] or "").lower()
     if agent_sev == true_sev:
@@ -814,7 +814,7 @@ def _grade_task1(response: str, disruption: Dict, world: Dict) -> Tuple[float, D
     else:
         sev_score = 0.0
 
-    # ── days_of_stock ────────────────────────────────────────────────────────
+    # â”€â”€ days_of_stock â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     agent_days = parsed["days_of_stock"]
     if agent_days is not None:
         diff = abs(agent_days - true_days)
@@ -829,7 +829,7 @@ def _grade_task1(response: str, disruption: Dict, world: Dict) -> Tuple[float, D
     else:
         days_score = 0.0
 
-    # ── factories_at_risk (recall) ───────────────────────────────────────────
+    # â”€â”€ factories_at_risk (recall) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     agent_facs = set(parsed["factories_at_risk"])
     if true_facs:
         fac_score = len(agent_facs & true_facs) / len(true_facs)
@@ -842,7 +842,7 @@ def _grade_task1(response: str, disruption: Dict, world: Dict) -> Tuple[float, D
         + days_score * 0.25
         + fac_score * 0.20
     )
-    total = float(max(0.0, min(1.0, total)))
+    total = float(max(0.001, min(0.999, total)))
 
     info = {
         "component_score": comp_score,
@@ -861,9 +861,9 @@ def _grade_task1(response: str, disruption: Dict, world: Dict) -> Tuple[float, D
     return total, info
 
 
-# ════════════════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 #  Task 2 Grader
-# ════════════════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 def _grade_task2(world: Dict) -> Tuple[float, Dict]:
     """
@@ -883,7 +883,7 @@ def _grade_task2(world: Dict) -> Tuple[float, Dict]:
     else:
         budget_score = max(0.0, 1.0 - (spent - budget) / budget)
 
-    # Priority orders protected — estimate producible units
+    # Priority orders protected â€” estimate producible units
     total_stock: Dict[str, int] = {}
     for wh in world["warehouses"].values():
         for comp, qty in wh["stock"].items():
@@ -914,7 +914,7 @@ def _grade_task2(world: Dict) -> Tuple[float, Dict]:
         for o in world["orders"].values()
         if o["priority"] in ("CRITICAL", "HIGH") and o["status"] != "fulfilled"
     )
-    priority_score = min(1.0, total_supply / max(hi_demand, 1.0)) if hi_demand > 0 else 1.0
+    priority_score = min(0.999, total_supply / max(hi_demand, 1.0)) if hi_demand > 0 else 1.0
 
     # Action diversity
     useful = {
@@ -940,7 +940,7 @@ def _grade_task2(world: Dict) -> Tuple[float, Dict]:
         + diversity * 0.25
         + eff * 0.20
     )
-    total = float(max(0.0, min(1.0, total)))
+    total = float(max(0.001, min(0.999, total)))
 
     info = {
         "budget_score": budget_score,
@@ -953,9 +953,9 @@ def _grade_task2(world: Dict) -> Tuple[float, Dict]:
     return total, info
 
 
-# ════════════════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 #  Task 3 Grader
-# ════════════════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 def _grade_task3(world: Dict) -> Tuple[float, Dict]:
     """
@@ -977,7 +977,7 @@ def _grade_task3(world: Dict) -> Tuple[float, Dict]:
     )
     on_time_rate = on_time / len(orders)
 
-    # Maximum possible penalty: sum(penalty × max_late_days) for each order
+    # Maximum possible penalty: sum(penalty Ã— max_late_days) for each order
     day = world["day"]
     max_poss = sum(
         o["late_penalty_per_day"] * max(0, day - o["due_day"])
@@ -992,7 +992,7 @@ def _grade_task3(world: Dict) -> Tuple[float, Dict]:
     if spent <= 0:
         budget_eff = 0.1
     elif spent <= budget:
-        budget_eff = min(1.0, 0.4 + 0.6 * (spent / budget))
+        budget_eff = min(0.999, 0.4 + 0.6 * (spent / budget))
     else:
         budget_eff = max(0.0, 1.0 - (spent - budget) / budget)
 
@@ -1002,7 +1002,7 @@ def _grade_task3(world: Dict) -> Tuple[float, Dict]:
         + financial_score * 0.25
         + budget_eff * 0.15
     )
-    total = float(max(0.0, min(1.0, total)))
+    total = float(max(0.001, min(0.999, total)))
 
     info = {
         "fulfillment_rate": fulfillment_rate,
@@ -1015,9 +1015,9 @@ def _grade_task3(world: Dict) -> Tuple[float, Dict]:
     return total, info
 
 
-# ════════════════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 #  Main Environment Class
-# ════════════════════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 class SupplyChainEnv:
     """
@@ -1033,7 +1033,7 @@ class SupplyChainEnv:
     def __init__(self) -> None:
         self._world: Optional[Dict] = None
 
-    # ── Public API ────────────────────────────────────────────────────────────
+    # â”€â”€ Public API â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     def reset(self, task: str = "assess_disruption", seed: int = 42) -> SCObservation:
         """
@@ -1067,7 +1067,7 @@ class SupplyChainEnv:
         if self._world is None:
             raise RuntimeError("Call reset() before step().")
         if self._world["done"]:
-            raise RuntimeError("Episode is done — call reset() to start a new episode.")
+            raise RuntimeError("Episode is done â€” call reset() to start a new episode.")
 
         task = self._world["task"]
         if task == "assess_disruption":
@@ -1085,7 +1085,7 @@ class SupplyChainEnv:
             raise RuntimeError("Call reset() before state().")
         return _build_state(self._world)
 
-    # ── Task 1: assess_disruption ─────────────────────────────────────────────
+    # â”€â”€ Task 1: assess_disruption â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     def _step_task1(self, action: SCAction) -> Tuple[SCObservation, float, bool, dict]:
         w = self._world
@@ -1095,7 +1095,7 @@ class SupplyChainEnv:
         disruption = DISRUPTIONS[dis_id]
         reward, grade_info = _grade_task1(action.command, disruption, w)
 
-        reward = float(max(0.0, min(1.0, reward)))
+        reward = float(max(0.001, min(0.999, reward)))
         w["cumulative_reward"] += reward
         w["score_so_far"] = reward
         w["done"] = True
@@ -1114,7 +1114,7 @@ class SupplyChainEnv:
 
         return _build_observation(w), reward, True, {"grade": grade_info}
 
-    # ── Task 2: resolve_disruption ────────────────────────────────────────────
+    # â”€â”€ Task 2: resolve_disruption â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     def _step_task2(self, action: SCAction) -> Tuple[SCObservation, float, bool, dict]:
         w = self._world
@@ -1123,13 +1123,13 @@ class SupplyChainEnv:
 
         parsed = parse_action(action.command)
         step_reward, msg, success = _execute_action(w, parsed)
-        step_reward = float(max(0.0, min(1.0, step_reward)))
+        step_reward = float(max(0.001, min(0.999, step_reward)))
 
         done = w["step_count"] >= max_steps
 
         if done:
             final_reward, grade_info = _grade_task2(w)
-            final_reward = float(max(0.0, min(1.0, final_reward)))
+            final_reward = float(max(0.001, min(0.999, final_reward)))
             w["score_so_far"] = final_reward
             w["cumulative_reward"] += final_reward
             w["done"] = True
@@ -1155,33 +1155,33 @@ class SupplyChainEnv:
             "success": success,
         }
 
-    # ── Task 3: cascade_management ────────────────────────────────────────────
+    # â”€â”€ Task 3: cascade_management â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     def _step_task3(self, action: SCAction) -> Tuple[SCObservation, float, bool, dict]:
         w = self._world
         w["step_count"] += 1
         max_steps = _TASK_MAX_STEPS["cascade_management"]
 
-        # ── Inject new disruption at step 4 (before action/simulation) ────────
+        # â”€â”€ Inject new disruption at step 4 (before action/simulation) â”€â”€â”€â”€â”€â”€â”€â”€
         new_disruption_msg = ""
         if w["step_count"] == 4 and "factory_fire_sup_b" not in w["active_disruptions"]:
             _apply_disruption(w, "factory_fire_sup_b")
             new_disruption_msg = (
-                "\n\n⚠️  NEW DISRUPTION DETECTED: Factory Fire at BetaCraft Germany (SUP_B)! "
+                "\n\nâš ï¸  NEW DISRUPTION DETECTED: Factory Fire at BetaCraft Germany (SUP_B)! "
                 "Motors and sensors production halted for 12 days!"
             )
 
-        # ── Execute agent action ──────────────────────────────────────────────
+        # â”€â”€ Execute agent action â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         parsed = parse_action(action.command)
         action_reward, msg, success = _execute_action(w, parsed)
-        action_reward = float(max(0.0, min(1.0, action_reward)))
+        action_reward = float(max(0.001, min(0.999, action_reward)))
 
-        # ── Simulate one day ──────────────────────────────────────────────────
+        # â”€â”€ Simulate one day â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         daily_penalty = _simulate_day(w)
 
         # Per-step reward: weighted combination of action quality + penalty avoidance
         penalty_reward = float(max(0.0, 1.0 - daily_penalty / MAX_DAILY_PENALTY))
-        step_reward = float(max(0.0, min(1.0, action_reward * 0.3 + penalty_reward * 0.7)))
+        step_reward = float(max(0.001, min(0.999, action_reward * 0.3 + penalty_reward * 0.7)))
 
         w["last_action_result"] = msg + new_disruption_msg
         done = w["step_count"] >= max_steps
@@ -1214,3 +1214,6 @@ class SupplyChainEnv:
             "success": success,
             "daily_penalty": daily_penalty,
         }
+
+
+
