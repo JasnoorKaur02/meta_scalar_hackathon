@@ -14,7 +14,10 @@ from typing import Optional, List
 SUPPLIER_IDS: List[str] = ["SUP_A", "SUP_B", "SUP_C", "SUP_D", "SUP_E"]
 WAREHOUSE_IDS: List[str] = ["WH_NORTH", "WH_SOUTH", "WH_WEST"]
 FACTORY_IDS: List[str] = ["FAC_ALPHA", "FAC_BETA", "FAC_GAMMA"]
-ORDER_IDS: List[str] = ["ORD_001", "ORD_002", "ORD_003", "ORD_004"]
+ORDER_IDS: List[str] = [
+    "ORD_001", "ORD_002", "ORD_003", "ORD_004",
+    "ORD_A01", "ORD_A02", "ORD_A03", "ORD_A04", "ORD_A05", "ORD_A06",
+]
 
 # Plural → singular normalization (longest match first)
 COMPONENT_MAP = {
@@ -155,7 +158,21 @@ def parse_action(command: str) -> dict:
         }
 
     # ------------------------------------------------------------------
-    # 6. notify_client
+    # 6. negotiate_contract
+    #    Keywords: "negotiate contract", "lock in supply", "pre-negotiate"
+    #    (checked before notify to avoid false matches)
+    # ------------------------------------------------------------------
+    if "negotiate contract" in low or "lock in supply" in low or "pre-negotiate" in low:
+        suppliers = _extract_ids_in_text_order(cmd, SUPPLIER_IDS)
+        return {
+            "type": "negotiate_contract",
+            "supplier": suppliers[0] if suppliers else None,
+            "component": _extract_component(low),
+            "units": _extract_number(cmd) or 100,
+        }
+
+    # ------------------------------------------------------------------
+    # 7. notify_client
     #    Keywords: "notify", "inform client", "warn client", "alert client"
     # ------------------------------------------------------------------
     if (
@@ -172,7 +189,7 @@ def parse_action(command: str) -> dict:
         }
 
     # ------------------------------------------------------------------
-    # 7. assess_situation
+    # 8. assess_situation
     #    Keywords: "assess", "status", "report", "situation", "overview"
     #    (Broadest match — must be last)
     # ------------------------------------------------------------------
